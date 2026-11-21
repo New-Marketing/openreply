@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { GITHUB_API_REPO, parseStars } from "./github-shared";
 import { ArrowUpRightIcon, GithubIcon } from "./icons";
 
 export interface NavLink {
@@ -18,13 +19,32 @@ function formatStars(count: number): string {
 export function SiteNav({
   links,
   githubUrl,
-  stars,
+  stars: serverStars,
 }: {
   links: NavLink[];
   githubUrl: string;
   stars: number | null;
 }) {
   const [open, setOpen] = useState(false);
+  // The server could not reach GitHub (rate limited, usually), so ask from the
+  // visitor's browser instead.
+  const [browserStars, setBrowserStars] = useState<number | null>(null);
+  const stars = serverStars ?? browserStars;
+
+  useEffect(() => {
+    if (serverStars !== null) return;
+    let cancelled = false;
+    fetch(GITHUB_API_REPO, { headers: { Accept: "application/vnd.github+json" } })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        const count = parseStars(data);
+        if (!cancelled && count !== null) setBrowserStars(count);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [serverStars]);
 
   useEffect(() => {
     if (!open) return;
