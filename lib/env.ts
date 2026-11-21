@@ -71,13 +71,25 @@ export function isUnifiedLogin(): boolean {
 }
 
 /**
- * The public demo, and the only host where sign-in is blocked. This repo is
- * something other people clone and deploy; a self-hoster's own domain must
- * never match this and must never be blocked from logging in — that's the
- * entire point of self-hosting. Keep this in sync with
- * components/demo-notice.tsx, which uses the same host for its banner.
+ * The public demo hosts, and the only hosts where sign-in is blocked. This repo
+ * is something other people clone and deploy; a self-hoster's own domain must
+ * never match these and must never be blocked from logging in — that's the
+ * entire point of self-hosting. components/demo-notice.tsx uses the same list
+ * for its banner.
  */
-export const DEMO_HOST = "openreply.diwen.dev";
+export const DEMO_HOSTS = [
+  "openreply.diwen.dev",
+  "openreply.dev",
+  "www.openreply.dev",
+] as const;
+
+/** The first demo host, shown when the banner is rendered without a browser. */
+export const DEMO_HOST = DEMO_HOSTS[0];
+
+/** True when a hostname (port already removed) is one of the public demo hosts. */
+export function isDemoHostname(hostname: string): boolean {
+  return (DEMO_HOSTS as readonly string[]).includes(hostname.toLowerCase());
+}
 
 /**
  * True when the current request is hitting the public demo host. Sign-in is
@@ -91,7 +103,7 @@ export const DEMO_HOST = "openreply.diwen.dev";
 export async function isPublicDemoHost(): Promise<boolean> {
   const { headers } = await import("next/headers");
   const host = (await headers()).get("host") ?? "";
-  return host.split(":")[0].toLowerCase() === DEMO_HOST;
+  return isDemoHostname(host.split(":")[0]);
 }
 
 /**

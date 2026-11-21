@@ -3,6 +3,7 @@ import {
   getEncryptionKeyHex,
   getMetaGraphApiVersion,
   getMissingInstagramOAuthEnv,
+  isDemoHostname,
   isEmailAllowedToSignIn,
   requireEnv,
 } from "../lib/env";
@@ -76,5 +77,21 @@ describe("sign-in allowlist", () => {
     expect(isEmailAllowedToSignIn(null)).toBe(false);
     expect(isEmailAllowedToSignIn(undefined)).toBe(false);
     expect(isEmailAllowedToSignIn("")).toBe(false);
+  });
+});
+
+describe("demo hosts", () => {
+  it("matches the public demo domains", () => {
+    expect(isDemoHostname("openreply.diwen.dev")).toBe(true);
+    expect(isDemoHostname("openreply.dev")).toBe(true);
+    expect(isDemoHostname("www.openreply.dev")).toBe(true);
+    expect(isDemoHostname("OpenReply.dev")).toBe(true);
+  });
+
+  it("never matches a self-hosted domain", () => {
+    expect(isDemoHostname("localhost")).toBe(false);
+    expect(isDemoHostname("replies.example.com")).toBe(false);
+    expect(isDemoHostname("notopenreply.dev")).toBe(false);
+    expect(isDemoHostname("openreply.dev.example.com")).toBe(false);
   });
 });
