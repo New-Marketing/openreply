@@ -2,6 +2,7 @@ import Link from "next/link";
 import { SitePage } from "@/components/site/shell";
 import { ArrowUpRightIcon } from "@/components/site/icons";
 import { InstagramDm } from "@/components/site/instagram";
+import { Faq } from "@/components/site/faq";
 import { Reveal } from "@/components/site/reveal";
 
 export interface SeoPageSection {
@@ -132,12 +133,7 @@ export default function SeoPageShell({ config }: { config: SeoPageConfig }) {
             <h2 className="heading-4">Common questions</h2>
           </Reveal>
           <Reveal delay={80}>
-            {config.faqs.map((faq) => (
-              <details key={faq.title}>
-                <summary className="title-3">{faq.title}</summary>
-                <p className="body-6">{faq.body}</p>
-              </details>
-            ))}
+            <Faq items={config.faqs.map((faq) => ({ q: faq.title, a: faq.body }))} />
           </Reveal>
         </div>
       </section>

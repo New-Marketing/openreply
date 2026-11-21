@@ -18,6 +18,7 @@ import {
   InstagramDm,
   InstagramPost,
 } from "@/components/site/instagram";
+import { Faq } from "@/components/site/faq";
 import { Reveal, TaglineReveal } from "@/components/site/reveal";
 import { SiteFooter, SiteHeader, siteClass } from "@/components/site/shell";
 import { SponsorCredit } from "@/components/site/sponsor";
@@ -508,12 +509,7 @@ export default function Home() {
               <h2 className="heading-4">FAQ</h2>
             </Reveal>
             <Reveal delay={80}>
-              {faqs.map((item) => (
-                <details key={item.q}>
-                  <summary className="title-3">{item.q}</summary>
-                  <p className="body-6">{item.a}</p>
-                </details>
-              ))}
+              <Faq items={faqs} />
             </Reveal>
           </div>
         </section>

@@ -392,11 +392,22 @@
 
 /* ---------- FAQ ---------- */
 .faq { display: grid; grid-template-columns: 0.8fr 1.2fr; gap: 64px; }
-.faq details { border-bottom: 1px solid var(--s3); padding-block: 16px; }
-.faq details:first-child { padding-top: 0; }
-.faq summary { cursor: pointer; padding-right: 12px; }
-.faq details p { margin-top: 12px; color: var(--muted); max-width: 600px; }
-.faq details a { text-decoration: underline; text-underline-offset: 4px; color: var(--fg); }
+.faq-item { border-bottom: 1px solid var(--s3); }
+.faq-item:first-child { border-top: 1px solid var(--s3); }
+.faq-question { margin: 0; }
+.faq-question button {
+  display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 16px;
+  padding: 20px 0; background: none; border: 0; color: var(--fg); font-family: inherit; text-align: left; cursor: pointer;
+}
+.faq-question button svg { width: 14px; height: 14px; flex-shrink: 0; color: var(--muted); transition: transform 500ms var(--ease), color 300ms var(--ease); }
+.faq-question button:hover svg { color: var(--fg); }
+.faq-item[data-open="true"] .faq-question button svg { transform: rotate(45deg); color: var(--fg); }
+.faq-answer { display: grid; grid-template-rows: 0fr; opacity: 0; transition: grid-template-rows 500ms var(--ease), opacity 300ms var(--ease); }
+.faq-answer > div { overflow: hidden; }
+.faq-answer p { padding-bottom: 20px; color: var(--muted); max-width: 600px; }
+.faq-answer a { text-decoration: underline; text-underline-offset: 4px; color: var(--fg); }
+.faq-item[data-open="true"] .faq-answer { grid-template-rows: 1fr; opacity: 1; }
+@media (prefers-reduced-motion: reduce) { .faq-answer, .faq-question button svg { transition: none; } }
 @media (max-width: 860px) { .faq { grid-template-columns: 1fr; gap: 24px; } }
 
 /* ---------- Closing and footer ---------- */
