@@ -7,6 +7,7 @@ import {
   SUPPORT_URL,
   getGitHubStars,
 } from "./github";
+import { DiscordIcon, GithubIcon, XLogoIcon } from "./icons";
 import { LogoMark } from "./logo";
 import { SiteNav, type NavLink } from "./nav";
 import { SponsorCredit } from "./sponsor";
@@ -42,6 +43,38 @@ export function SiteFooter() {
             <p className="caption-5">
               Open source Instagram comment-to-DM automation.
             </p>
+            <ul className="footer-social">
+              <li>
+                <a
+                  href="https://github.com/diwennee"
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label="GitHub"
+                >
+                  <GithubIcon />
+                </a>
+              </li>
+              <li>
+                <a
+                  href="https://x.com/diwennee"
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label="X"
+                >
+                  <XLogoIcon />
+                </a>
+              </li>
+              <li>
+                <a
+                  href="https://discord.gg/p8DCB3USpM"
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label="Discord"
+                >
+                  <DiscordIcon />
+                </a>
+              </li>
+            </ul>
           </div>
           <nav className="footer-nav" aria-label="Footer navigation">
             <a href={GITHUB_URL}>GitHub</a>

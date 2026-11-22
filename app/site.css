@@ -420,6 +420,10 @@
 .footer { border-top: 1px solid var(--s3); padding-block: 36px 20px; }
 .footer-top { display: flex; justify-content: space-between; gap: 32px; }
 .footer-top p { margin-top: 12px; color: var(--muted); }
+.footer-social { margin-top: 16px; display: flex; gap: 16px; }
+.footer-social a { display: grid; place-items: center; width: 24px; height: 24px; color: var(--muted); transition: color 300ms var(--ease); }
+.footer-social a:hover { color: var(--fg); }
+.footer-social svg { width: 22px; height: 22px; }
 .footer-nav { display: flex; align-items: flex-start; flex-wrap: wrap; gap: 20px; font-size: 12px; line-height: 16px; }
 .footer-bottom { margin-top: 32px; padding-top: 16px; border-top: 1px solid var(--s3); display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; align-items: center; color: var(--muted); }
 .footer-bottom a.link-strong { color: var(--fg); }
