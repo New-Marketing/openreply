@@ -7,6 +7,7 @@ import {
   SUPPORT_URL,
   getGitHubStars,
 } from "./github";
+import { LogoMark } from "./logo";
 import { SiteNav, type NavLink } from "./nav";
 import { SponsorCredit } from "./sponsor";
 import "@/app/site.css";
@@ -35,7 +36,8 @@ export function SiteFooter() {
         <div className="footer-top">
           <div>
             <Link href="/" className="wordmark">
-              OpenReply
+              <LogoMark className="wordmark-mark" />
+              <span>OpenReply</span>
             </Link>
             <p className="caption-5">
               Open source Instagram comment-to-DM automation.
@@ -50,6 +52,7 @@ export function SiteFooter() {
             </a>
             <Link href="/privacy">Privacy</Link>
             <Link href="/terms">Terms</Link>
+            <Link href="/brand">Brand</Link>
             <Link href="/data-deletion">Data deletion</Link>
           </nav>
         </div>
