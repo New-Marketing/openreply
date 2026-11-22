@@ -4,7 +4,6 @@ import { geist, inter } from "./font";
 import {
   GITHUB_URL,
   SETUP_DOCS_URL,
-  SUPPORT_URL,
   getGitHubStars,
 } from "./github";
 import { DiscordIcon, GithubIcon, XLogoIcon } from "./icons";
@@ -76,17 +75,20 @@ export function SiteFooter() {
               </li>
             </ul>
           </div>
-          <nav className="footer-nav" aria-label="Footer navigation">
-            <a href={GITHUB_URL}>GitHub</a>
-            <a href={SETUP_DOCS_URL}>Setup guide</a>
-            <Link href="/templates">Templates</Link>
-            <a href={SUPPORT_URL} target="_blank" rel="noreferrer">
-              Buy me a coffee
-            </a>
-            <Link href="/privacy">Privacy</Link>
-            <Link href="/terms">Terms</Link>
-            <Link href="/brand">Brand</Link>
-            <Link href="/data-deletion">Data deletion</Link>
+          <nav className="footer-cols" aria-label="Footer navigation">
+            <div className="footer-col">
+              <h4>Project</h4>
+              <a href={GITHUB_URL}>GitHub</a>
+              <a href={SETUP_DOCS_URL}>Setup guide</a>
+              <Link href="/templates">Templates</Link>
+              <Link href="/brand">Brand</Link>
+            </div>
+            <div className="footer-col">
+              <h4>Legal</h4>
+              <Link href="/privacy">Privacy</Link>
+              <Link href="/terms">Terms</Link>
+              <Link href="/data-deletion">Data deletion</Link>
+            </div>
           </nav>
         </div>
         <div className="footer-bottom caption-5">
