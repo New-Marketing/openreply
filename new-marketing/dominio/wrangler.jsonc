@@ -1,0 +1,8 @@
+{
+  "name": "openreply-dominio",
+  "main": "worker.js",
+  "compatibility_date": "2026-10-01",
+  "workers_dev": false,
+  "routes": [{ "pattern": "direct.xn--servios-yxa.site", "custom_domain": true }],
+  "vpc_services": [{ "binding": "ORIGEM", "service_id": "01a21009-a991-7842-8f63-10d275f8e4ea" }]
+}
