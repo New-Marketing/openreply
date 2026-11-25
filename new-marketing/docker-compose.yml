@@ -1,0 +1,87 @@
+# OpenReply da New Marketing — serviço SEPARADO da Central, na VPS ads-agents.
+#   cd ~/openreply && docker compose pull && docker compose up -d
+# Nenhuma porta é publicada no host: o acesso entra só pelo túnel da Cloudflare.
+# A imagem é montada no GitHub (Actions), nunca na VPS.
+
+x-app: &app
+  image: ghcr.io/new-marketing/openreply:${IMAGEM_TAG:-latest}
+  restart: unless-stopped
+  env_file: .env
+  environment:
+    DATABASE_URL: postgresql://openreply:${POSTGRES_PASSWORD}@postgres:5432/openreply
+    REDIS_URL: redis://redis:6379
+  depends_on:
+    postgres: { condition: service_healthy }
+    redis: { condition: service_healthy }
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: openreply
+      POSTGRES_USER: openreply
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes: [pgdata:/var/lib/postgresql/data]
+    mem_limit: 256m
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U openreply"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory-policy", "noeviction"]
+    volumes: [redisdata:/data]
+    mem_limit: 128m
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  web:
+    <<: *app
+    command: ["sh", "-c", "npx prisma migrate deploy && exec npm run start"]
+    mem_limit: 768m
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3000/api/health').then(() => process.exit(0), () => process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+
+  worker:
+    <<: *app
+    command: ["npm", "run", "worker"]
+    mem_limit: 512m
+
+  cron:
+    <<: *app
+    command: ["sh", "scripts/cron.sh"]
+    mem_limit: 64m
+    environment:
+      CRON_BASE_URL: http://web:3000
+    depends_on:
+      web: { condition: service_healthy }
+
+  # Caixa de e-mail interna: enquanto não houver um remetente de verdade
+  # (Resend/SMTP), o link de login cai aqui e é lido pela VPS.
+  mailpit:
+    image: axllent/mailpit:latest
+    restart: unless-stopped
+    mem_limit: 64m
+
+  tunel:
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    command: ["tunnel", "--no-autoupdate", "run"]
+    environment:
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN}
+    mem_limit: 128m
+
+volumes:
+  pgdata:
+  redisdata:
