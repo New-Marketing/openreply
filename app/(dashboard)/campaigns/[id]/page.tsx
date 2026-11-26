@@ -19,11 +19,13 @@ interface Campaign {
   name: string;
   postId: string | null;
   postUrl: string | null;
+  posts?: { postId: string; postUrl: string | null }[];
   pendingNextReel: boolean;
   matchAnyPost: boolean;
   keywords: string[];
   matchAnyWord: boolean;
   dmTriggerEnabled: boolean;
+  dmEnabled?: boolean;
   dmMessage: string;
   openingDmEnabled: boolean;
   openingDmMessage: string | null;
@@ -157,7 +159,9 @@ export default function CampaignDetailPage() {
     ? t("Any post or reel")
     : campaign.pendingNextReel
       ? t("Your next reel")
-      : t("A specific post or reel");
+      : (campaign.posts?.length ?? 0) > 1
+        ? t("{count} chosen posts or reels", { count: campaign.posts?.length ?? 0 })
+        : t("A specific post or reel");
   const matchText = campaign.matchAnyWord
     ? t("Any comment")
     : campaign.keywords.join(", ") || t("No keywords");
@@ -210,6 +214,28 @@ export default function CampaignDetailPage() {
             )}
             <span className="text-sm text-foreground">{trigger}</span>
           </div>
+          {(campaign.posts?.length ?? 0) > 1 && (
+            <ul className="space-y-1">
+              {campaign.posts?.map((post, i) => (
+                <li key={post.postId} className="truncate text-xs">
+                  {post.postUrl ? (
+                    <a
+                      href={post.postUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-accent hover:underline"
+                    >
+                      {i + 1}. {post.postUrl}
+                    </a>
+                  ) : (
+                    <span className="text-muted">
+                      {i + 1}. {post.postId}
+                    </span>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
         </Summary>
 
         <Summary title={t("And this comment has")}>
@@ -249,6 +275,15 @@ export default function CampaignDetailPage() {
           </Summary>
         )}
 
+        {campaign.dmEnabled === false && (
+          <Summary title={t("They will get")}>
+            <FieldBox>
+              {t("No DM: only the public reply above is posted under their comment. Good for a code or answer everyone can see.")}
+            </FieldBox>
+          </Summary>
+        )}
+
+        {campaign.dmEnabled !== false && (
         <Summary title={t("And then, they will get a DM")}>
           <FieldBox>{campaign.dmMessage}</FieldBox>
           {hasLink && (
@@ -260,6 +295,7 @@ export default function CampaignDetailPage() {
             </FieldBox>
           )}
         </Summary>
+        )}
 
         {hasLink && (
           <Summary title={t("The exact link sent")}>
@@ -349,6 +385,7 @@ export default function CampaignDetailPage() {
             caption=""
             sampleComment={campaign.matchAnyWord ? t("nice!") : campaign.keywords[0] ?? "LINK"}
             dmTriggerEnabled={campaign.dmTriggerEnabled}
+            dmEnabled={campaign.dmEnabled ?? true}
             publicReplyEnabled={campaign.publicReplyEnabled}
             publicReplyMessage={publicReplies[0] ?? ""}
             openingDmEnabled={campaign.openingDmEnabled}

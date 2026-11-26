@@ -15,7 +15,8 @@ import { requireScope, type ServiceContext } from "./auth";
 const summarySelect = {
   id: true, name: true, goal: true, instagramAccountId: true, isActive: true,
   postId: true, postUrl: true, pendingNextReel: true, matchAnyPost: true,
-  keywords: true, matchAnyWord: true, dmMessage: true, createdAt: true, updatedAt: true,
+  keywords: true, matchAnyWord: true, dmEnabled: true, dmMessage: true, createdAt: true, updatedAt: true,
+  posts: { select: { postId: true, postUrl: true }, orderBy: { position: "asc" } },
 } as const;
 
 export async function listCampaigns(context: ServiceContext) {

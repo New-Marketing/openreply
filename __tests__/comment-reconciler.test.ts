@@ -136,3 +136,77 @@ describe("comment polling does not recreate unsafe sends", () => {
     },
   );
 });
+
+describe("campaigns listening on several posts", () => {
+  beforeEach(() => {
+    queueAdd.mockReset();
+    readComments.mockReset();
+    mockPrisma.operationalEvent.create.mockResolvedValue({});
+    mockPrisma.dmLog.findMany.mockResolvedValue([]);
+  });
+
+  it("sweeps every chosen post and each post's ad copies", async () => {
+    const SECOND = "18000000000000002";
+    mockPrisma.$queryRaw.mockImplementation(async (_sql: unknown, postId: string) =>
+      postId === POST ? [{ mediaId: AD }] : []
+    );
+    mockPrisma.automation.findMany.mockResolvedValue([
+      {
+        id: "campaign",
+        name: "Campaign",
+        workspaceId: "workspace",
+        postId: POST,
+        posts: [{ postId: POST }, { postId: SECOND }],
+        matchAnyWord: false,
+        keywords: ["AI"],
+        publicReplyEnabled: false,
+        dmEnabled: true,
+        instagramAccount: { id: "connection", instagramId: "owner", provider: "META", accessToken: "test" },
+      },
+    ]);
+    readComments.mockImplementation(async ({ mediaId }: { mediaId: string }) => [
+      { id: `c-${mediaId}`, text: "AI", from: { id: "reader" }, timestamp: new Date().toISOString() },
+    ]);
+
+    await reconcileComments();
+
+    const swept = readComments.mock.calls.map(([args]) => args.mediaId);
+    expect(swept).toEqual([POST, AD, SECOND]);
+    const queued = queueAdd.mock.calls.map(([, data]) => [data.mediaId, data.originalMediaId]);
+    expect(queued).toEqual([
+      [POST, undefined],
+      [AD, POST],
+      [SECOND, undefined],
+    ]);
+  });
+
+  it("treats a public-reply-only comment as done once its reply is posted", async () => {
+    mockPrisma.$queryRaw.mockResolvedValue([]);
+    mockPrisma.automation.findMany.mockResolvedValue([
+      {
+        id: "campaign",
+        name: "Campaign",
+        workspaceId: "workspace",
+        postId: POST,
+        posts: [{ postId: POST }],
+        matchAnyWord: true,
+        keywords: [],
+        publicReplyEnabled: true,
+        dmEnabled: false,
+        instagramAccount: { id: "connection", instagramId: "owner", provider: "META", accessToken: "test" },
+      },
+    ]);
+    readComments.mockResolvedValue([
+      { id: "done", text: "hi", from: { id: "reader" }, timestamp: new Date().toISOString() },
+      { id: "todo", text: "hi", from: { id: "other" }, timestamp: new Date().toISOString() },
+    ]);
+    mockPrisma.dmLog.findMany.mockResolvedValue([
+      { commentId: "done", status: "PUBLIC_REPLY_ONLY", attempts: 0, publicReplySentAt: new Date() },
+      { commentId: "todo", status: "FAILED", attempts: 0, publicReplySentAt: null },
+    ]);
+
+    await reconcileComments();
+
+    expect(queueAdd.mock.calls.map(([, data]) => data.commentId)).toEqual(["todo"]);
+  });
+});

@@ -405,9 +405,20 @@ async function processComment(job: Job<ProcessCommentJob>): Promise<void> {
       // A comment left on an ad carries the ad's own media id, while the
       // campaign is bound to the post the ad was created from, so both ids
       // have to be considered or the comment is dropped without a trace.
+      // A campaign can listen on several chosen posts (AutomationPost); the
+      // first one is also mirrored on postId, which is matched as well.
       OR: [
         { postId: mediaId },
         ...(originalMediaId ? [{ postId: originalMediaId }] : []),
+        {
+          posts: {
+            some: {
+              postId: {
+                in: originalMediaId ? [mediaId, originalMediaId] : [mediaId],
+              },
+            },
+          },
+        },
         { matchAnyPost: true },
       ],
       isActive: true,
@@ -468,7 +479,9 @@ async function processComment(job: Job<ProcessCommentJob>): Promise<void> {
 
     const alreadyDmd = existingLog?.status === "SENT";
     const alreadyPublicReplied = Boolean(existingLog?.publicReplySentAt);
-    const needsDm = !alreadyDmd && !existingLog?.dmDeliveryUnconfirmed &&
+    // A public-reply-only campaign never sends a DM.
+    const needsDm = automation.dmEnabled && !alreadyDmd &&
+      !existingLog?.dmDeliveryUnconfirmed &&
       (existingLog?.attempts ?? 0) < MAX_COMMENT_SEND_ATTEMPTS;
 
     // Skip only when there is genuinely nothing left to do. A comment whose DM
@@ -590,13 +603,20 @@ async function processComment(job: Job<ProcessCommentJob>): Promise<void> {
           where: {
             automationId_commentId: { automationId: automation.id, commentId },
           },
-          data: { publicReplySentAt: new Date(), publicReplyError: null, publicReplyDeliveryUnconfirmed: false },
+          data: {
+            publicReplySentAt: new Date(), publicReplyError: null, publicReplyDeliveryUnconfirmed: false,
+            // For a public-reply-only campaign the reply is the whole job.
+            ...(automation.dmEnabled
+              ? {}
+              : { status: "PUBLIC_REPLY_ONLY" as const, errorMessage: null }),
+          },
         });
       } catch (error) {
         console.error(
           "[DM Worker] Public comment reply failed:",
           formatError(error)
         );
+        const replyError = formatError(classifySendError(error));
         await prisma.dmLog
           .update({
             where: {
@@ -605,7 +625,13 @@ async function processComment(job: Job<ProcessCommentJob>): Promise<void> {
                 commentId,
               },
             },
-            data: { publicReplyError: formatError(classifySendError(error)), publicReplyDeliveryUnconfirmed: !isConfirmedSendRejection(error) },
+            data: {
+              publicReplyError: replyError, publicReplyDeliveryUnconfirmed: !isConfirmedSendRejection(error),
+              // Without a DM leg, a failed reply is the campaign's outcome.
+              ...(automation.dmEnabled
+                ? {}
+                : { status: "FAILED" as const, errorMessage: replyError }),
+            },
           })
           .catch(() => {});
       }
@@ -1077,7 +1103,8 @@ async function processPostback(job: Job<ProcessPostbackJob>): Promise<void> {
   const fromOpeningDm = marker === "open";
 
   const automation = await prisma.automation.findFirst({
-    where: { id: automationId, isActive: true, ...connectionScope(job.data) },
+    // A campaign switched to public-reply-only has no DM left to reveal.
+    where: { id: automationId, isActive: true, dmEnabled: true, ...connectionScope(job.data) },
     include: {
       instagramAccount: true,
       workspace: true,
@@ -1462,6 +1489,8 @@ async function processMessage(job: Job<ProcessMessageJob>): Promise<void> {
     where: {
       ...connectionScope(job.data),
       dmTriggerEnabled: true,
+      // Public-reply-only campaigns have no DM to answer with.
+      dmEnabled: true,
       isActive: true,
       instagramAccount: { instagramId: instagramAccountId },
     },

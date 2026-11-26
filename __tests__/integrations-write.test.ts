@@ -8,6 +8,7 @@ const state = vi.hoisted(() => {
     workspace: { findUnique: vi.fn() },
     instagramAccount: { findFirst: vi.fn(), findMany: vi.fn() },
     dmLog: { findMany: vi.fn(), groupBy: vi.fn() },
+    automationPost: { deleteMany: vi.fn(), createMany: vi.fn() },
     linkClick: { count: vi.fn() },
     syncLinks: vi.fn(),
     media: vi.fn(),
@@ -21,7 +22,7 @@ vi.mock("@/lib/db/client", () => ({
   prisma: {
     serviceKey: state.keys, automation: state.automation, workspace: state.workspace,
     instagramAccount: state.instagramAccount, dmLog: state.dmLog, linkClick: state.linkClick,
-    $transaction: (fn: (tx: unknown) => unknown) => fn({ automation: state.automation }),
+    $transaction: (fn: (tx: unknown) => unknown) => fn({ automation: state.automation, automationPost: state.automationPost }),
   },
 }));
 vi.mock("@/lib/campaigns/links", async importOriginal => ({
@@ -101,7 +102,11 @@ describe("scopes decide which tools exist", () => {
     expect(tools.create_campaign.properties).toHaveProperty("dmMessage");
     expect(tools.create_campaign.properties).toHaveProperty("publicReplyMessages");
     expect(tools.create_campaign.properties).not.toHaveProperty("isActive");
-    expect(tools.create_campaign.required).toEqual(expect.arrayContaining(["name", "dmMessage"]));
+    // dmMessage is optional since a campaign can be public-reply-only.
+    expect(tools.create_campaign.required).toEqual(expect.arrayContaining(["name"]));
+    expect(tools.create_campaign.required).not.toContain("dmMessage");
+    expect(tools.create_campaign.properties).toHaveProperty("dmEnabled");
+    expect(tools.create_campaign.properties).toHaveProperty("posts");
     expect(tools.update_campaign.properties).not.toHaveProperty("isActive");
     expect(tools.update_campaign.properties).not.toHaveProperty("reportShareEnabled");
     expect(tools.update_campaign.required).toEqual(["id"]);
@@ -170,6 +175,8 @@ describe("update_campaign", () => {
     storeCampaign({ id: "c1", workspaceId: "ws", isActive: false });
     await callTool(ctx(WRITE), "update_campaign", { id: "c1", matchAnyPost: true });
     expect(state.automation.update.mock.calls[0][0].data).toEqual({ matchAnyPost: true, postId: null, postUrl: null });
+    expect(state.automationPost.deleteMany).toHaveBeenCalledWith({ where: { automationId: "c1" } });
+    expect(state.automationPost.createMany).not.toHaveBeenCalled();
   });
 
   it("will not edit a live campaign without campaigns:activate", async () => {
@@ -281,7 +288,7 @@ describe("reading posts and DM logs", () => {
 describe("MCP transport", () => {
   it("returns tool errors with their validation details", async () => {
     useKey(WRITE);
-    const response = await mcp(json("/api/mcp", "POST", { jsonrpc: "2.0", id: 1, method: "tools/call", params: { name: "create_campaign", arguments: { name: "x" } } }));
+    const response = await mcp(json("/api/mcp", "POST", { jsonrpc: "2.0", id: 1, method: "tools/call", params: { name: "create_campaign", arguments: { name: "x", dmMessage: 5 } } }));
     const body = await response.json();
     expect(body.result.isError).toBe(true);
     expect(body.result.content[0].text).toMatch(/^Invalid tool arguments: .*dmMessage/);

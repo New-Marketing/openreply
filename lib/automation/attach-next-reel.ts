@@ -76,12 +76,22 @@ export async function attachPendingNextReels(): Promise<AttachNextReelResult> {
       );
       if (!nextReel) continue;
 
+      // Once bound, it is an ordinary chosen-posts campaign, so the reel also
+      // goes into its post list (and more posts can be added to it later).
       await prisma.automation.update({
         where: { id: automation.id },
         data: {
           postId: nextReel.id,
           postUrl: nextReel.permalink ?? null,
           pendingNextReel: false,
+          posts: {
+            deleteMany: {},
+            create: {
+              postId: nextReel.id,
+              postUrl: nextReel.permalink ?? null,
+              position: 0,
+            },
+          },
         },
       });
       bound += 1;

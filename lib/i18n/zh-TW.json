@@ -476,5 +476,13 @@
   "Workspace-scoped keys for the API and MCP server. Keys are read-only unless you allow more. Only admins and owners can manage keys.": "用於 API 與 MCP 伺服器、僅限所屬工作區的金鑰。除非您另行允許，金鑰皆為唯讀。只有管理員與擁有者能管理金鑰。",
   "Permissions": "權限",
   "Editing a live campaign also needs campaigns:activate. Without it, a key has to pause the campaign first.": "編輯進行中的行銷活動也需要 campaigns:activate。沒有此權限時，金鑰須先暫停該活動。",
-  "Last used: {date}": "上次使用：{date}"
+  "Last used: {date}": "上次使用：{date}",
+  "{count} of {max} selected": "已選 {count}/{max}",
+  "Selected #{n}": "已選 #{n}",
+  "specific posts or reels": "指定的貼文或 Reels",
+  "a DM": "私訊",
+  "No DM: only the public reply above is posted under their comment. Good for a code or answer everyone can see.": "不傳私訊：只在留言下方發布上面的公開回覆。適合大家都能看到的代碼或答案。",
+  "Without a DM, add the public reply to send under the comment.": "不傳私訊時，請新增要發布在留言下方的公開回覆。",
+  "Public reply only": "僅公開回覆",
+  "{count} chosen posts or reels": "已選 {count} 則貼文或 Reels"
 }

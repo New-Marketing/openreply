@@ -16,7 +16,7 @@ import { useI18n } from "@/lib/i18n/provider";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import AccountSelect, { type AccountOption } from "@/components/account-select";
-import PostPicker from "@/components/post-picker";
+import PostPicker, { type PickedPost } from "@/components/post-picker";
 import CampaignPreview, { type PreviewTab } from "@/components/campaign-preview";
 import { readCache, writeCache } from "@/lib/client-cache";
 import {
@@ -26,6 +26,9 @@ import {
 } from "@/lib/import-queue";
 
 type TriggerScope = "specific" | "any" | "next";
+
+// Matches MAX_CAMPAIGN_POSTS in lib/campaigns/mutations.ts.
+const MAX_POSTS = 10;
 type MatchMode = "specific" | "any";
 
 interface LoadedCampaign {
@@ -33,12 +36,14 @@ interface LoadedCampaign {
   name: string;
   postId: string | null;
   postUrl: string | null;
+  posts?: { postId: string; postUrl: string | null }[];
   pendingNextReel: boolean;
   matchAnyPost: boolean;
   keywords: string[];
   matchAnyWord: boolean;
   wholeWordMatch?: boolean;
   dmTriggerEnabled: boolean;
+  dmEnabled?: boolean;
   dmMessage: string;
   openingDmEnabled: boolean;
   openingDmMessage: string | null;
@@ -148,10 +153,10 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
   const [isActive, setIsActive] = useState(true);
 
   const [triggerScope, setTriggerScope] = useState<TriggerScope>("specific");
-  const [postId, setPostId] = useState<string | null>(null);
-  const [postUrl, setPostUrl] = useState<string | null>(null);
-  const [postThumb, setPostThumb] = useState<string | null>(null);
-  const [postCaption, setPostCaption] = useState("");
+  // The posts a "specific posts" campaign listens on, in the order picked.
+  const [selectedPosts, setSelectedPosts] = useState<PickedPost[]>([]);
+  const postThumb = selectedPosts[0]?.thumbUrl ?? null;
+  const postCaption = selectedPosts[0]?.caption ?? "";
 
   // Post IDs already tied to another automation on this account, so the picker
   // can flag them and the user knows not to double-assign. Maps postId ->
@@ -170,6 +175,8 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
   const [openingDmMessage, setOpeningDmMessage] = useState("");
   const [openingDmButtonLabel, setOpeningDmButtonLabel] = useState("");
 
+  // Off makes the campaign public-reply-only: no DM is sent.
+  const [dmEnabled, setDmEnabled] = useState(true);
   const [dmMessage, setDmMessage] = useState("");
   const [linkOpen, setLinkOpen] = useState(false);
   const [trackedDestinationUrl, setTrackedDestinationUrl] = useState("");
@@ -258,8 +265,13 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
         setTriggerScope(
           c.matchAnyPost ? "any" : c.pendingNextReel ? "next" : "specific"
         );
-        setPostId(c.postId);
-        setPostUrl(c.postUrl);
+        setSelectedPosts(
+          c.posts?.length
+            ? c.posts.map((p) => ({ postId: p.postId, postUrl: p.postUrl ?? undefined }))
+            : c.postId
+              ? [{ postId: c.postId, postUrl: c.postUrl ?? undefined }]
+              : []
+        );
         setMatchMode(c.matchAnyWord ? "any" : "specific");
         setKeywordText(c.keywords.join(", "));
         setWholeWordMatch(c.wholeWordMatch ?? true);
@@ -275,6 +287,7 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
         setOpeningDmEnabled(c.openingDmEnabled);
         setOpeningDmMessage(c.openingDmMessage ?? "");
         setOpeningDmButtonLabel(c.openingDmButtonLabel ?? "");
+        setDmEnabled(c.dmEnabled ?? true);
         setDmMessage(c.dmMessage);
         setLinkButtonLabel(c.linkButtonLabel ?? "Open link");
         setIsActive(c.isActive);
@@ -310,10 +323,14 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
         if (cancelled || !payload.success) return;
         const map: Record<string, string> = {};
         for (const a of payload.data as LoadedCampaign[]) {
-          if (!a.postId) continue;
           if (a.instagramAccountId !== selectedAccountId) continue;
           if (mode === "edit" && a.id === campaignId) continue;
-          map[a.postId] = a.name;
+          const ids = a.posts?.length
+            ? a.posts.map((p) => p.postId)
+            : a.postId
+              ? [a.postId]
+              : [];
+          for (const id of ids) map[id] = map[id] ?? a.name;
         }
         setUsedPosts(map);
       })
@@ -328,12 +345,10 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
   function prefillFromRow(row: ImportRow) {
     setName(row.name ?? "");
     setTriggerScope("specific");
-    setPostId(null);
-    setPostUrl(null);
-    setPostThumb(null);
-    setPostCaption("");
+    setSelectedPosts([]);
     setMatchMode("specific");
     setKeywordText((row.keywords ?? []).join(", "));
+    setDmEnabled(true);
     setDmMessage(row.dmMessage ?? "");
     setPublicReplyEnabled(Boolean(row.publicReply));
     setPublicReplyMessages(row.publicReply ? [row.publicReply] : [""]);
@@ -372,16 +387,25 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
   const username =
     accounts.find((a) => a.id === selectedAccountId)?.username ?? "yourbrand";
 
-  function handlePostSelect(
-    id: string,
-    url?: string,
-    thumb?: string,
-    caption?: string
-  ) {
-    setPostId(id);
-    setPostUrl(url ?? null);
-    setPostThumb(thumb ?? null);
-    setPostCaption(caption ?? "");
+  function togglePost(post: PickedPost) {
+    setSelectedPosts((prev) =>
+      prev.some((p) => p.postId === post.postId)
+        ? prev.filter((p) => p.postId !== post.postId)
+        : prev.length >= MAX_POSTS
+          ? prev
+          : [...prev, post]
+    );
+  }
+
+  function toggleDm() {
+    const next = !dmEnabled;
+    setDmEnabled(next);
+    // A campaign without a DM is only its public reply, so switch that on.
+    if (!next) {
+      setPublicReplyEnabled(true);
+      setDmTriggerEnabled(false);
+      setPreviewTab("comments");
+    }
   }
 
   function ensureLinkToken() {
@@ -392,12 +416,17 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
     setError(null);
 
     if (!selectedAccountId) return setError(t("Connect an Instagram account first."));
-    if (triggerScope === "specific" && !postId)
+    if (triggerScope === "specific" && selectedPosts.length === 0)
       return setError(t("Pick a post or reel to trigger the campaign."));
     if (matchMode === "specific" && keywords.length === 0)
       return setError(t("Add at least one keyword, or switch to any word."));
-    if (!dmMessage.trim()) return setError(t("Add the DM with the link."));
-    if (openingDmEnabled && (!openingDmMessage.trim() || !openingDmButtonLabel.trim()))
+    if (dmEnabled && !dmMessage.trim()) return setError(t("Add the DM with the link."));
+    if (
+      !dmEnabled &&
+      (!publicReplyEnabled || !publicReplyMessages.some((m) => m.trim()))
+    )
+      return setError(t("Without a DM, add the public reply to send under the comment."));
+    if (dmEnabled && openingDmEnabled && (!openingDmMessage.trim() || !openingDmButtonLabel.trim()))
       return setError(t("Your opening DM needs a message and a button label."));
 
     setSaving(true);
@@ -405,18 +434,23 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
     const payload = {
       name: name.trim() || `Campaign for @${username}`,
       instagramAccountId: selectedAccountId,
-      postId: triggerScope === "specific" ? postId : null,
-      postUrl: triggerScope === "specific" ? postUrl : null,
+      posts:
+        triggerScope === "specific"
+          ? selectedPosts.map((p) => ({ postId: p.postId, postUrl: p.postUrl ?? null }))
+          : [],
+      postId: triggerScope === "specific" ? selectedPosts[0]?.postId ?? null : null,
+      postUrl: triggerScope === "specific" ? selectedPosts[0]?.postUrl ?? null : null,
       matchAnyPost: triggerScope === "any",
       pendingNextReel: triggerScope === "next",
       matchAnyWord: matchMode === "any",
       keywords: matchMode === "any" ? [] : keywords,
       wholeWordMatch,
-      dmTriggerEnabled,
-      dmMessage,
-      openingDmEnabled,
-      openingDmMessage: openingDmEnabled ? openingDmMessage : null,
-      openingDmButtonLabel: openingDmEnabled ? openingDmButtonLabel : null,
+      dmTriggerEnabled: dmEnabled && dmTriggerEnabled,
+      dmEnabled,
+      dmMessage: dmEnabled ? dmMessage : "",
+      openingDmEnabled: dmEnabled && openingDmEnabled,
+      openingDmMessage: dmEnabled && openingDmEnabled ? openingDmMessage : null,
+      openingDmButtonLabel: dmEnabled && openingDmEnabled ? openingDmButtonLabel : null,
       publicReplyEnabled,
       publicReplyMessages: publicReplyEnabled
         ? publicReplyMessages.map((m) => m.trim()).filter(Boolean)
@@ -425,14 +459,14 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
       linkButtonLabel: linkButtonLabel.trim() || "Open link",
       secondaryDestinationUrl: secondaryDestinationUrl.trim() || "",
       secondaryButtonLabel: secondaryButtonLabel.trim() || "Open link",
-      requireFollow,
-      followPromptMessage: requireFollow ? followPromptMessage.trim() : "",
-      followPromptButtonLabel: requireFollow
+      requireFollow: dmEnabled && requireFollow,
+      followPromptMessage: dmEnabled && requireFollow ? followPromptMessage.trim() : "",
+      followPromptButtonLabel: dmEnabled && requireFollow
         ? followPromptButtonLabel.trim() || "i'm following"
         : "",
-      followUpEnabled,
-      followUpMessage: followUpEnabled ? followUpMessage.trim() : "",
-      followUpDelayMinutes: followUpEnabled ? followUpDelayMinutes : 0,
+      followUpEnabled: dmEnabled && followUpEnabled,
+      followUpMessage: dmEnabled && followUpEnabled ? followUpMessage.trim() : "",
+      followUpDelayMinutes: dmEnabled && followUpEnabled ? followUpDelayMinutes : 0,
       isActive: activeValue,
     };
 
@@ -455,9 +489,13 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
         // the picker flags it on the next imported row — the fetch that builds
         // this map doesn't re-run while the builder stays mounted through the
         // import queue.
-        if (triggerScope === "specific" && postId) {
-          const assignedPostId = postId;
-          setUsedPosts((prev) => ({ ...prev, [assignedPostId]: payload.name }));
+        if (triggerScope === "specific" && selectedPosts.length > 0) {
+          const assigned = selectedPosts.map((p) => p.postId);
+          setUsedPosts((prev) => {
+            const next = { ...prev };
+            for (const id of assigned) next[id] = payload.name;
+            return next;
+          });
         }
         // Importing: advance to the next queued row instead of leaving.
         if (importQueue && importQueue.length > 1) {
@@ -661,9 +699,7 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
                 value={selectedAccountId}
                 onChange={(id) => {
                   setSelectedAccountId(id);
-                  setPostId(null);
-                  setPostUrl(null);
-                  setPostThumb(null);
+                  setSelectedPosts([]);
                 }}
                 includeAll={false}
                 label={t("Instagram account")}
@@ -677,15 +713,16 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
             checked={triggerScope === "specific"}
             onSelect={() => setTriggerScope("specific")}
           >
-            {t("a specific post or reel")}
+            {t("specific posts or reels")}
           </Radio>
           {triggerScope === "specific" && (
             <div className="rounded-lg border border-border p-2">
               <PostPicker
-                selectedPostId={postId}
+                selectedPostIds={selectedPosts.map((p) => p.postId)}
+                maxSelected={MAX_POSTS}
                 instagramAccountId={selectedAccountId}
                 usedPostIds={usedPosts}
-                onSelect={handlePostSelect}
+                onToggle={togglePost}
               />
             </div>
           )}
@@ -739,6 +776,7 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
           >
             {t("any word")}
           </Radio>
+          {dmEnabled && (
           <div className="flex items-center justify-between gap-3 rounded-lg border border-border px-3 py-2.5">
             <span className="text-sm text-foreground">
               {t("also reply when someone DMs")}{" "}
@@ -749,7 +787,8 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
               onToggle={() => setDmTriggerEnabled(!dmTriggerEnabled)}
             />
           </div>
-          {dmTriggerEnabled && (
+          )}
+          {dmEnabled && dmTriggerEnabled && (
             <p className="text-xs text-muted">
               {matchMode === "any"
                 ? t("Every DM to this account gets the reply below — use with care.")
@@ -816,6 +855,19 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
 
         <Section title={t("They will get")}>
           <div className="rounded-lg border border-border p-3">
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-sm text-foreground">{t("a DM")}</span>
+              <Toggle on={dmEnabled} onToggle={toggleDm} />
+            </div>
+            {!dmEnabled && (
+              <p className="mt-2 text-xs text-muted">
+                {t("No DM: only the public reply above is posted under their comment. Good for a code or answer everyone can see.")}
+              </p>
+            )}
+          </div>
+          {dmEnabled && (
+          <>
+          <div className="mt-3 rounded-lg border border-border p-3">
             <div className="flex items-center justify-between">
               <span className="text-sm text-foreground">{t("an opening DM")}</span>
               <Toggle
@@ -876,8 +928,11 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
               </div>
             )}
           </div>
+          </>
+          )}
         </Section>
 
+        {dmEnabled && (
         <Section title={t("And then, they will get")}>
           <div className="rounded-lg border border-border p-3 space-y-2">
             <span className="text-sm text-foreground">{t("a DM with a link")}</span>
@@ -992,6 +1047,7 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
             )}
           </div>
         </Section>
+        )}
       </div>
 
       {/* Right: preview */}
@@ -1006,7 +1062,8 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
             postThumb={postThumb}
             caption={postCaption}
             sampleComment={keywords[0] ?? ""}
-            dmTriggerEnabled={dmTriggerEnabled}
+            dmTriggerEnabled={dmEnabled && dmTriggerEnabled}
+            dmEnabled={dmEnabled}
             publicReplyEnabled={publicReplyEnabled}
             publicReplyMessage={publicReplyMessages.find((m) => m.trim()) ?? ""}
             openingDmEnabled={openingDmEnabled}

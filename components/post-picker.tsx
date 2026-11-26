@@ -5,7 +5,8 @@
 /**
  * Post Picker
  *
- * Grid of Instagram post thumbnails, selectable.
+ * Grid of Instagram post thumbnails. Several can be selected (up to
+ * `maxSelected`); clicking a selected post unselects it.
  * Fetches from /api/instagram/posts.
  */
 
@@ -25,24 +26,31 @@ interface InstagramPost {
   timestamp: string;
 }
 
+export interface PickedPost {
+  postId: string;
+  postUrl?: string;
+  thumbUrl?: string;
+  caption?: string;
+}
+
 interface PostPickerProps {
-  selectedPostId: string | null;
+  /** Selected posts, in the order they were picked. */
+  selectedPostIds: string[];
+  /** Most posts that can be selected; further picks are disabled. */
+  maxSelected?: number;
   instagramAccountId?: string | null;
   /** postId -> name of the campaign already using it. Flagged in the grid. */
   usedPostIds?: Record<string, string>;
-  onSelect: (
-    postId: string,
-    postUrl?: string,
-    thumbUrl?: string,
-    caption?: string
-  ) => void;
+  /** Called with the clicked post; the parent adds or removes it. */
+  onToggle: (post: PickedPost) => void;
 }
 
 export default function PostPicker({
-  selectedPostId,
+  selectedPostIds,
+  maxSelected,
   instagramAccountId,
   usedPostIds,
-  onSelect,
+  onToggle,
 }: PostPickerProps) {
   const { t } = useI18n();
   const [limitations, setLimitations] = useState<string[]>([]);
@@ -156,6 +164,11 @@ export default function PostPicker({
         />
         <span className="shrink-0 text-xs text-muted">{posts.length}</span>
       </div>
+      {maxSelected !== undefined && maxSelected > 1 && (
+        <p className="px-1 text-xs text-muted">
+          {t("{count} of {max} selected", { count: selectedPostIds.length, max: maxSelected })}
+        </p>
+      )}
       {visible.length === 0 ? (
         <p className="py-6 text-center text-sm text-muted">
           {t("No posts match “")}{query}{t("”")}
@@ -173,7 +186,12 @@ export default function PostPicker({
               the square thumbnails flatten into strips. */}
           <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 max-h-64 auto-rows-min content-start overflow-y-auto p-1">
             {visible.map((post) => {
-              const isSelected = selectedPostId === post.id;
+              const selectedIndex = selectedPostIds.indexOf(post.id);
+              const isSelected = selectedIndex !== -1;
+              const atLimit =
+                !isSelected &&
+                maxSelected !== undefined &&
+                selectedPostIds.length >= maxSelected;
               const usedByName = usedPostIds?.[post.id];
               const isUsed = Boolean(usedByName) && !isSelected;
               const thumb = post.thumbnail_url ?? post.media_url;
@@ -184,7 +202,15 @@ export default function PostPicker({
           <button
             key={post.id}
             type="button"
-            onClick={() => onSelect(post.id, post.permalink, thumb, post.caption)}
+            onClick={() =>
+              onToggle({
+                postId: post.id,
+                postUrl: post.permalink,
+                thumbUrl: thumb,
+                caption: post.caption,
+              })
+            }
+            disabled={atLimit}
             onMouseEnter={() => setHoveredId(post.id)}
             onMouseLeave={() =>
               setHoveredId((cur) => (cur === post.id ? null : cur))
@@ -192,7 +218,7 @@ export default function PostPicker({
             aria-pressed={isSelected}
             title={isUsed && usedByName ? t("Already used by \"{name}\"", { name: usedByName }) : undefined}
             className={`
-              relative aspect-square rounded overflow-hidden border-2
+              relative aspect-square rounded overflow-hidden border-2 disabled:cursor-not-allowed disabled:opacity-40
               ${
                 isSelected
                   ? "border-accent"
@@ -231,7 +257,9 @@ export default function PostPicker({
             )}
             {isSelected && (
               <span className="absolute bottom-0 inset-x-0 bg-accent text-white text-xs py-1">
-                {t("Selected")}
+                {selectedPostIds.length > 1
+                  ? t("Selected #{n}", { n: selectedIndex + 1 })
+                  : t("Selected")}
               </span>
             )}
           </button>

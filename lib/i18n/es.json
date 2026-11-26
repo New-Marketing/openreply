@@ -476,5 +476,13 @@
   "Workspace-scoped keys for the API and MCP server. Keys are read-only unless you allow more. Only admins and owners can manage keys.": "Claves del espacio de trabajo para la API y el servidor MCP. Las claves son de solo lectura salvo que permitas más. Solo los administradores y propietarios pueden gestionar claves.",
   "Permissions": "Permisos",
   "Editing a live campaign also needs campaigns:activate. Without it, a key has to pause the campaign first.": "Editar una campaña activa también requiere campaigns:activate. Sin ese permiso, la clave debe pausar primero la campaña.",
-  "Last used: {date}": "Último uso: {date}"
+  "Last used: {date}": "Último uso: {date}",
+  "{count} of {max} selected": "{count} de {max} seleccionados",
+  "Selected #{n}": "Seleccionado n.º {n}",
+  "specific posts or reels": "publicaciones o reels específicos",
+  "a DM": "un DM",
+  "No DM: only the public reply above is posted under their comment. Good for a code or answer everyone can see.": "Sin DM: solo se publica la respuesta pública de arriba bajo su comentario. Ideal para un código o respuesta que todos pueden ver.",
+  "Without a DM, add the public reply to send under the comment.": "Sin DM, agrega la respuesta pública que se publicará bajo el comentario.",
+  "Public reply only": "Solo respuesta pública",
+  "{count} chosen posts or reels": "{count} publicaciones o reels elegidos"
 }

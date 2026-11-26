@@ -205,6 +205,9 @@ model Automation {
   // keywords above. Independent of the post trigger — a DM has no media, so
   // postId / matchAnyPost do not apply to it.
   dmTriggerEnabled Boolean @default(false)
+  // Off for a "public reply only" campaign: the comment gets the public reply
+  // and nothing is sent by DM. dmMessage is then stored empty.
+  dmEnabled      Boolean @default(true)
   dmMessage      String
   openingDmEnabled     Boolean @default(false)
   openingDmMessage     String?
@@ -234,9 +237,27 @@ model Automation {
   dmLogs           DmLog[]
   trackedLinks     TrackedLink[]
   linkClicks       LinkClick[]
+  posts            AutomationPost[]
 
   @@index([workspaceId])
   @@index([instagramAccountId])
+  @@index([postId])
+}
+
+/// The posts a "specific posts" campaign listens on (up to 10). The first one,
+/// by position, is mirrored into Automation.postId / postUrl so screens and
+/// reports that show a single post keep working.
+model AutomationPost {
+  id           String   @id @default(cuid())
+  automationId String
+  postId       String
+  postUrl      String?
+  position     Int      @default(0)
+  createdAt    DateTime @default(now())
+
+  automation Automation @relation(fields: [automationId], references: [id], onDelete: Cascade)
+
+  @@unique([automationId, postId])
   @@index([postId])
 }
 
@@ -396,6 +417,8 @@ enum DmStatus {
   SKIPPED_RATE_LIMIT
   SKIPPED_PLAN_LIMIT
   SKIPPED_NO_MATCH
+  // Public-reply-only campaign: the public reply was posted and no DM is sent.
+  PUBLIC_REPLY_ONLY
 }
 
 enum WebhookStatus {

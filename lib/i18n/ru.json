@@ -476,5 +476,13 @@
   "Workspace-scoped keys for the API and MCP server. Keys are read-only unless you allow more. Only admins and owners can manage keys.": "Ключи для API и сервера MCP в пределах рабочего пространства. По умолчанию ключи доступны только для чтения. Управлять ключами могут только администраторы и владельцы.",
   "Permissions": "Разрешения",
   "Editing a live campaign also needs campaigns:activate. Without it, a key has to pause the campaign first.": "Для изменения активной кампании также требуется campaigns:activate. Без этого права ключ должен сначала приостановить кампанию.",
-  "Last used: {date}": "Последнее использование: {date}"
+  "Last used: {date}": "Последнее использование: {date}",
+  "{count} of {max} selected": "Выбрано {count} из {max}",
+  "Selected #{n}": "Выбрано №{n}",
+  "specific posts or reels": "выбранные посты или рилсы",
+  "a DM": "личное сообщение",
+  "No DM: only the public reply above is posted under their comment. Good for a code or answer everyone can see.": "Без личного сообщения: под комментарием публикуется только публичный ответ выше. Подходит для кода или ответа, который видят все.",
+  "Without a DM, add the public reply to send under the comment.": "Без личного сообщения добавьте публичный ответ под комментарием.",
+  "Public reply only": "Только публичный ответ",
+  "{count} chosen posts or reels": "Выбрано постов или рилсов: {count}"
 }

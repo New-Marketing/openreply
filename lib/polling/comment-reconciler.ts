@@ -74,11 +74,13 @@ export async function reconcileComments(): Promise<void> {
       id: true,
       name: true,
       postId: true,
+      posts: { select: { postId: true }, orderBy: { position: "asc" } },
       matchAnyPost: true,
       matchAnyWord: true,
       keywords: true,
       wholeWordMatch: true,
       publicReplyEnabled: true,
+      dmEnabled: true,
       workspaceId: true,
       instagramAccount: {
         select: {
@@ -126,11 +128,13 @@ async function sweepCampaign({
     id: string;
     name: string;
     postId: string | null;
+    posts?: { postId: string }[];
     matchAnyPost: boolean;
     matchAnyWord: boolean;
     keywords: string[];
     wholeWordMatch: boolean;
     publicReplyEnabled: boolean;
+    dmEnabled?: boolean;
     instagramAccount: {
       id: string;
       instagramId: string;
@@ -172,28 +176,39 @@ async function sweepCampaign({
     return stat;
   }
 
-  // Which media this campaign covers: its own post, or the recent feed if it
-  // matches any post.
-  const mediaIds: string[] = [];
-  if (automation.postId) {
-    mediaIds.push(automation.postId);
-    mediaIds.push(...(await adMediaFor(automation.postId)));
+  // Which media this campaign covers: its chosen posts (each with its ad
+  // copies), or the recent feed if it matches any post. `postId` is the post a
+  // media item belongs to when it is an ad copy, so the worker can match it.
+  const chosenPosts = [
+    ...new Set([
+      ...(automation.posts ?? []).map((p) => p.postId),
+      ...(automation.postId ? [automation.postId] : []),
+    ]),
+  ];
+  const targets: { mediaId: string; postId?: string }[] = [];
+  if (chosenPosts.length > 0) {
+    for (const postId of chosenPosts) {
+      targets.push({ mediaId: postId });
+      for (const adId of await adMediaFor(postId)) {
+        targets.push({ mediaId: adId, postId });
+      }
+    }
   } else if (automation.matchAnyPost) {
     try {
       const media = await getUserMedia({
         context: accessToken,
         limit: RECENT_MEDIA_LIMIT,
       });
-      mediaIds.push(...media.map((m) => m.id));
+      targets.push(...media.map((m) => ({ mediaId: m.id })));
     } catch (error) {
       stat.errors.push(`Media list: ${errMessage(error)}`);
     }
   }
-  if (mediaIds.length === 0) return stat;
+  if (targets.length === 0) return stat;
 
   const queue = getDMQueue();
 
-  for (const mediaId of mediaIds) {
+  for (const { mediaId, postId: originalPostId } of targets) {
     let comments: InstagramComment[];
     try {
       comments = await getRecentMediaComments({
@@ -251,7 +266,8 @@ async function sweepCampaign({
       },
     });
     const handledSet = new Set(logs.filter((log) => {
-      const dmStopped = log.status === "SENT" || log.status === "SKIPPED_PLAN_LIMIT" ||
+      const dmStopped = automation.dmEnabled === false ||
+        log.status === "SENT" || log.status === "SKIPPED_PLAN_LIMIT" ||
         log.dmDeliveryUnconfirmed || log.attempts >= MAX_COMMENT_SEND_ATTEMPTS ||
         (log.status === "FAILED" && hasLegacyUnconfirmedDelivery(log.errorMessage));
       const replyStopped = !automation.publicReplyEnabled ||
@@ -283,10 +299,7 @@ async function sweepCampaign({
         // the ad was made from: without this the worker matches nothing and
         // drops the comment, so the sweep would enqueue it again every five
         // minutes and never deliver it.
-        originalMediaId:
-          automation.postId && mediaId !== automation.postId
-            ? automation.postId
-            : undefined,
+        originalMediaId: originalPostId,
         source: "POLLING",
       });
       stat.enqueued += 1;

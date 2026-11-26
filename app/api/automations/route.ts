@@ -48,6 +48,10 @@ export async function GET(request: NextRequest) {
       _count: {
         select: { dmLogs: true },
       },
+      posts: {
+        select: { postId: true, postUrl: true },
+        orderBy: { position: "asc" },
+      },
       trackedLinks: {
         select: {
           id: true,
@@ -121,7 +125,8 @@ export async function GET(request: NextRequest) {
     const item = analytics.get(row.automationId);
     if (!item) continue;
     const count = row._count._all;
-    if (row.status === "SENT") item.sent += count;
+    // A public-reply-only campaign's "sent" is its posted replies.
+    if (row.status === "SENT" || row.status === "PUBLIC_REPLY_ONLY") item.sent += count;
     if (row.status === "FAILED") item.failed += count;
     if (row.status.startsWith("SKIPPED_")) item.skipped += count;
   }

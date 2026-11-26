@@ -50,6 +50,24 @@ const sourceCampaign = {
   reportShareEnabled: false,
   createdAt: new Date("2026-05-01T00:00:00.000Z"),
   updatedAt: new Date("2026-05-20T00:00:00.000Z"),
+  posts: [
+    {
+      id: "post_row_1",
+      automationId: "automation_123",
+      postId: "media_1",
+      postUrl: "https://www.instagram.com/p/one/",
+      position: 0,
+      createdAt: new Date("2026-05-01T00:00:00.000Z"),
+    },
+    {
+      id: "post_row_2",
+      automationId: "automation_123",
+      postId: "media_2",
+      postUrl: null,
+      position: 1,
+      createdAt: new Date("2026-05-01T00:00:00.000Z"),
+    },
+  ],
   trackedLinks: [
     {
       id: "link_1",
@@ -80,6 +98,7 @@ const NOT_COPIED = new Set([
   "createdAt",
   "updatedAt",
   "trackedLinks",
+  "posts",
 ]);
 
 function createArgs() {
@@ -200,9 +219,24 @@ describe("duplicateCampaign", () => {
 
     expect(mockPrisma.automation.findFirst).toHaveBeenCalledWith(
       expect.objectContaining({
-        include: { trackedLinks: { orderBy: TRACKED_LINK_ORDER } },
+        include: {
+          trackedLinks: { orderBy: TRACKED_LINK_ORDER },
+          posts: { orderBy: { position: "asc" } },
+        },
       })
     );
+  });
+
+  it("copies every post the campaign listens on, in order", async () => {
+    await duplicateCampaign({
+      automationId: "automation_123",
+      workspaceId: "workspace_123",
+    });
+
+    expect(createArgs().data.posts.create).toEqual([
+      { postId: "media_1", postUrl: "https://www.instagram.com/p/one/", position: 0 },
+      { postId: "media_2", postUrl: null, position: 1 },
+    ]);
   });
 
   it("numbers the copy's links 0, 1, 2 even when the original's positions are tied", async () => {

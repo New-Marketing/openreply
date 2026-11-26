@@ -38,6 +38,7 @@ const STATUS_FILTERS = [
   "SKIPPED_RATE_LIMIT",
   "SKIPPED_PLAN_LIMIT",
   "SKIPPED_DEDUP",
+  "PUBLIC_REPLY_ONLY",
 ];
 
 export default function LogsPage() {

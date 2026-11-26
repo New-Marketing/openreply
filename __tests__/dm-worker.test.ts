@@ -163,6 +163,7 @@ const mockAutomation = {
   instagramAccountId: "ig_account_row_1",
   postId: "media_101",
   keywords: ["LINK", "PRICE"],
+  dmEnabled: true,
   dmMessage: "Hey {username}! Here is the link: https://example.com",
   isActive: true,
   wholeWordMatch: true,
@@ -336,6 +337,7 @@ describe("DM Worker — comments left on an ad", () => {
           OR: [
             { postId: "ad_media_999" },
             { postId: "media_101" },
+            { posts: { some: { postId: { in: ["ad_media_999", "media_101"] } } } },
             { matchAnyPost: true },
           ],
         }),
@@ -353,7 +355,11 @@ describe("DM Worker — Full Pipeline", () => {
 
     expect(mockPrisma.automation.findMany).toHaveBeenCalledWith({
       where: {
-        OR: [{ postId: "media_101" }, { matchAnyPost: true }],
+        OR: [
+          { postId: "media_101" },
+          { posts: { some: { postId: { in: ["media_101"] } } } },
+          { matchAnyPost: true },
+        ],
         isActive: true,
         instagramAccount: { instagramId: "ig_456" },
       },
@@ -2166,4 +2172,67 @@ it("retains the public reply claim if sending succeeded but its log write failed
   await process({ ...createMockJob(), id: "next-poll" });
   expect(sendCommentReply).toHaveBeenCalledTimes(1);
   expect(mockSendPrivateReply).toHaveBeenCalledTimes(1);
+});
+
+describe("DM Worker — public-reply-only campaigns", () => {
+  const publicOnly = {
+    ...mockAutomation,
+    dmEnabled: false,
+    dmMessage: "",
+    publicReplyEnabled: true,
+    publicReplyMessage: "Your code is AI10",
+    publicReplyMessages: ["Your code is AI10"],
+  };
+
+  it("posts the public reply, sends no DM and marks the comment PUBLIC_REPLY_ONLY", async () => {
+    const { sendCommentReply } = await import("@/lib/meta/client");
+    vi.mocked(sendCommentReply).mockResolvedValue({ id: "public-reply" });
+    mockPrisma.automation.findMany.mockResolvedValue([publicOnly]);
+
+    await getProcessor()(createMockJob());
+
+    expect(sendCommentReply).toHaveBeenCalledTimes(1);
+    expect(mockSendPrivateReply).not.toHaveBeenCalled();
+    expect(mockReserveWorkspaceDMSend).not.toHaveBeenCalled();
+    expect(mockReserveDMSlot).not.toHaveBeenCalled();
+    expect(mockPrisma.dmLog.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          status: "PUBLIC_REPLY_ONLY",
+          publicReplySentAt: expect.any(Date),
+        }),
+      })
+    );
+  });
+
+  it("marks the comment FAILED when the public reply cannot be posted", async () => {
+    const { sendCommentReply } = await import("@/lib/meta/client");
+    vi.mocked(sendCommentReply).mockRejectedValue(new Error("comment deleted"));
+    mockPrisma.automation.findMany.mockResolvedValue([publicOnly]);
+
+    await getProcessor()(createMockJob());
+
+    expect(mockSendPrivateReply).not.toHaveBeenCalled();
+    expect(mockPrisma.dmLog.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ status: "FAILED" }),
+      })
+    );
+  });
+
+  it("does nothing more once the public reply is already posted", async () => {
+    const { sendCommentReply } = await import("@/lib/meta/client");
+    vi.mocked(sendCommentReply).mockResolvedValue({ id: "public-reply" });
+    mockPrisma.automation.findMany.mockResolvedValue([publicOnly]);
+    mockPrisma.dmLog.findUnique.mockResolvedValue({
+      status: "PUBLIC_REPLY_ONLY",
+      publicReplySentAt: new Date(),
+      attempts: 0,
+    });
+
+    await getProcessor()(createMockJob());
+
+    expect(sendCommentReply).not.toHaveBeenCalled();
+    expect(mockSendPrivateReply).not.toHaveBeenCalled();
+  });
 });

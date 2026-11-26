@@ -43,14 +43,17 @@ export async function duplicateCampaign({
 }) {
   const source = await prisma.automation.findFirst({
     where: { id: automationId, workspaceId },
-    include: { trackedLinks: { orderBy: TRACKED_LINK_ORDER } },
+    include: {
+      trackedLinks: { orderBy: TRACKED_LINK_ORDER },
+      posts: { orderBy: { position: "asc" } },
+    },
   });
 
   if (!source) return null;
 
   // Every setting on the row carries over. The links are recreated rather than
   // spread, since they are rows of their own.
-  const { trackedLinks, ...settings } = source;
+  const { trackedLinks, posts, ...settings } = source;
 
   return prisma.automation.create({
     data: {
@@ -65,6 +68,13 @@ export async function duplicateCampaign({
       name: buildDuplicateName(settings.name),
       isActive: false,
       reportShareSlug: generateReportShareSlug(),
+      posts: {
+        create: posts.map((post, position) => ({
+          postId: post.postId,
+          postUrl: post.postUrl,
+          position,
+        })),
+      },
       trackedLinks: {
         // Numbered from the order just read, so the copy's buttons match
         // the original's even if the original's positions have gaps or ties.
@@ -77,6 +87,6 @@ export async function duplicateCampaign({
         })),
       },
     },
-    include: { trackedLinks: true },
+    include: { trackedLinks: true, posts: { orderBy: { position: "asc" } } },
   });
 }

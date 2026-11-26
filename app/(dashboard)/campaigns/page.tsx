@@ -19,11 +19,13 @@ interface Campaign {
   goal: string | null;
   postId: string | null;
   postUrl: string | null;
+  posts?: { postId: string; postUrl: string | null }[];
   pendingNextReel: boolean;
   matchAnyPost: boolean;
   keywords: string[];
   matchAnyWord: boolean;
   dmMessage: string;
+  dmEnabled?: boolean;
   openingDmEnabled: boolean;
   openingDmMessage: string | null;
   openingDmButtonLabel: string | null;
@@ -437,6 +439,16 @@ export default function CampaignsPage() {
                       {t("Waiting for next reel")}
                     </span>
                   )}
+                  {(auto.posts?.length ?? 0) > 1 && (
+                    <span className="shrink-0 rounded-full bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
+                      {t("{count} posts", { count: auto.posts?.length ?? 0 })}
+                    </span>
+                  )}
+                  {auto.dmEnabled === false && (
+                    <span className="shrink-0 rounded-full bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
+                      {t("Public reply only")}
+                    </span>
+                  )}
                   {auto.requireFollow && (
                     <span className="shrink-0 rounded-full bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
                       {t("Follow gate")}
@@ -461,8 +473,14 @@ export default function CampaignsPage() {
                   ))}
                 </div>
 
-                {/* DM preview */}
-                <p className="text-sm text-muted truncate">&ldquo;{auto.dmMessage}{t("”")}</p>
+                {/* DM preview (or the public reply, when there is no DM) */}
+                <p className="text-sm text-muted truncate">
+                  &ldquo;
+                  {auto.dmEnabled === false
+                    ? auto.publicReplyMessages?.[0] ?? auto.publicReplyMessage ?? ""
+                    : auto.dmMessage}
+                  {t("”")}
+                </p>
 
                 {/* Tracked link sent */}
                 {auto.trackedLinks[0]?.trackedUrl && (
