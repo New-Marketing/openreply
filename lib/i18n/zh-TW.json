@@ -484,5 +484,17 @@
   "No DM: only the public reply above is posted under their comment. Good for a code or answer everyone can see.": "不傳私訊：只在留言下方發布上面的公開回覆。適合大家都能看到的代碼或答案。",
   "Without a DM, add the public reply to send under the comment.": "不傳私訊時，請新增要發布在留言下方的公開回覆。",
   "Public reply only": "僅公開回覆",
-  "{count} chosen posts or reels": "已選 {count} 則貼文或 Reels"
+  "{count} chosen posts or reels": "已選 {count} 則貼文或 Reels",
+  "Switch workspace": "切換工作區",
+  "Your workspaces": "你的工作區",
+  "New workspace": "新增工作區",
+  "Workspace name": "工作區名稱",
+  "Create workspace": "建立工作區",
+  "Creating…": "建立中…",
+  "Could not switch workspace. Please try again.": "無法切換工作區，請再試一次。",
+  "Could not create the workspace. Please try again.": "無法建立工作區，請再試一次。",
+  "Each workspace has its own Instagram accounts, campaigns, team and API keys.": "每個工作區都有各自的 Instagram 帳號、自動回覆活動、團隊與 API 金鑰。",
+  "Workspace renamed.": "已重新命名工作區。",
+  "Could not rename the workspace. Please try again.": "無法重新命名工作區，請再試一次。",
+  "Only owners and admins can rename the workspace.": "只有擁有者和管理員可以重新命名工作區。"
 }

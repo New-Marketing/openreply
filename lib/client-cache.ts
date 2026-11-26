@@ -27,6 +27,19 @@ export function readCache<T>(
   }
 }
 
+/**
+ * Drops everything this tab cached. Cached posts, conversations and the chosen
+ * inbox account belong to one workspace, so switching workspaces clears them.
+ */
+export function clearClientCache(): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.sessionStorage.clear();
+  } catch {
+    // Storage unavailable — nothing to clear.
+  }
+}
+
 export function writeCache<T>(key: string, data: T): void {
   if (typeof window === "undefined") return;
   try {

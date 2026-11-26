@@ -484,5 +484,17 @@
   "No DM: only the public reply above is posted under their comment. Good for a code or answer everyone can see.": "Без личного сообщения: под комментарием публикуется только публичный ответ выше. Подходит для кода или ответа, который видят все.",
   "Without a DM, add the public reply to send under the comment.": "Без личного сообщения добавьте публичный ответ под комментарием.",
   "Public reply only": "Только публичный ответ",
-  "{count} chosen posts or reels": "Выбрано постов или рилсов: {count}"
+  "{count} chosen posts or reels": "Выбрано постов или рилсов: {count}",
+  "Switch workspace": "Сменить рабочее пространство",
+  "Your workspaces": "Ваши рабочие пространства",
+  "New workspace": "Новое рабочее пространство",
+  "Workspace name": "Название рабочего пространства",
+  "Create workspace": "Создать рабочее пространство",
+  "Creating…": "Создаём…",
+  "Could not switch workspace. Please try again.": "Не удалось сменить рабочее пространство. Попробуйте ещё раз.",
+  "Could not create the workspace. Please try again.": "Не удалось создать рабочее пространство. Попробуйте ещё раз.",
+  "Each workspace has its own Instagram accounts, campaigns, team and API keys.": "У каждого рабочего пространства свои аккаунты Instagram, кампании, команда и ключи API.",
+  "Workspace renamed.": "Рабочее пространство переименовано.",
+  "Could not rename the workspace. Please try again.": "Не удалось переименовать рабочее пространство. Попробуйте ещё раз.",
+  "Only owners and admins can rename the workspace.": "Переименовать рабочее пространство могут только владельцы и администраторы."
 }

@@ -484,5 +484,17 @@
   "No DM: only the public reply above is posted under their comment. Good for a code or answer everyone can see.": "Sin DM: solo se publica la respuesta pública de arriba bajo su comentario. Ideal para un código o respuesta que todos pueden ver.",
   "Without a DM, add the public reply to send under the comment.": "Sin DM, agrega la respuesta pública que se publicará bajo el comentario.",
   "Public reply only": "Solo respuesta pública",
-  "{count} chosen posts or reels": "{count} publicaciones o reels elegidos"
+  "{count} chosen posts or reels": "{count} publicaciones o reels elegidos",
+  "Switch workspace": "Cambiar de espacio de trabajo",
+  "Your workspaces": "Tus espacios de trabajo",
+  "New workspace": "Nuevo espacio de trabajo",
+  "Workspace name": "Nombre del espacio de trabajo",
+  "Create workspace": "Crear espacio de trabajo",
+  "Creating…": "Creando…",
+  "Could not switch workspace. Please try again.": "No se pudo cambiar de espacio de trabajo. Inténtalo de nuevo.",
+  "Could not create the workspace. Please try again.": "No se pudo crear el espacio de trabajo. Inténtalo de nuevo.",
+  "Each workspace has its own Instagram accounts, campaigns, team and API keys.": "Cada espacio de trabajo tiene sus propias cuentas de Instagram, campañas, equipo y claves de API.",
+  "Workspace renamed.": "Espacio de trabajo renombrado.",
+  "Could not rename the workspace. Please try again.": "No se pudo renombrar el espacio de trabajo. Inténtalo de nuevo.",
+  "Only owners and admins can rename the workspace.": "Solo los propietarios y administradores pueden renombrar el espacio de trabajo."
 }

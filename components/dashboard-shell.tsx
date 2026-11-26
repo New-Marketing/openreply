@@ -3,17 +3,22 @@
 import { useState } from "react";
 import Sidebar from "@/components/sidebar";
 import TopBar from "@/components/top-bar";
+import type { WorkspaceSummary } from "@/lib/workspace";
 
 interface DashboardShellProps {
   children: React.ReactNode;
+  workspaceId: string;
   workspaceName: string;
+  workspaces: WorkspaceSummary[];
   instagramUsername: string | null;
   instagramAccountCount: number;
 }
 
 export default function DashboardShell({
   children,
+  workspaceId,
   workspaceName,
+  workspaces,
   instagramUsername,
   instagramAccountCount,
 }: DashboardShellProps) {
@@ -26,7 +31,9 @@ export default function DashboardShell({
       <Sidebar
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
+        workspaceId={workspaceId}
         workspaceName={workspaceName}
+        workspaces={workspaces}
       />
 
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
@@ -40,7 +47,13 @@ export default function DashboardShell({
             allow horizontal scrolling too, which lets a wide child drag the
             whole page sideways on a phone. */}
         <main className="flex-1 overflow-y-auto overflow-x-hidden">
-          <div className="px-4 lg:px-8 py-5 sm:py-6 max-w-7xl mx-auto">
+          {/* Keyed by workspace: the pages load their data in effects, so a
+              workspace switch remounts them and they fetch the new one's data
+              instead of keeping the previous workspace's state. */}
+          <div
+            key={workspaceId}
+            className="px-4 lg:px-8 py-5 sm:py-6 max-w-7xl mx-auto"
+          >
             {children}
           </div>
         </main>

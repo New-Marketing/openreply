@@ -3,6 +3,7 @@
 import LanguageSwitcher from "@/components/language-switcher";
 import { useI18n } from "@/lib/i18n/provider";
 import { Suspense, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import type { AccountOption } from "@/components/account-select";
 import { ZernioConnection } from "@/components/zernio-connection";
 import { InstagramConnectNotice } from "@/components/instagram-connect-notice";
@@ -51,6 +52,7 @@ interface WorkspaceMembersData {
 
 export default function SettingsPage() {
   const { t, label, locale } = useI18n();
+  const router = useRouter();
   const [data, setData] = useState<SettingsData | null>(null);
   const [membersData, setMembersData] = useState<WorkspaceMembersData | null>(
     null
@@ -60,6 +62,10 @@ export default function SettingsPage() {
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState<"ADMIN" | "MEMBER">("MEMBER");
   const [memberError, setMemberError] = useState<string | null>(null);
+  const [workspaceName, setWorkspaceName] = useState("");
+  const [renameStatus, setRenameStatus] = useState<"saved" | "error" | null>(
+    null
+  );
 
   useEffect(() => {
     Promise.all([
@@ -67,11 +73,40 @@ export default function SettingsPage() {
       fetch("/api/workspace/members").then((res) => res.json()),
     ])
       .then(([statsPayload, membersPayload]) => {
-        if (statsPayload.success) setData(statsPayload.data);
+        if (statsPayload.success) {
+          setData(statsPayload.data);
+          setWorkspaceName(statsPayload.data.workspace.name);
+        }
         if (membersPayload.success) setMembersData(membersPayload.data);
       })
       .finally(() => setLoading(false));
   }, []);
+
+  async function renameWorkspace(event: React.FormEvent) {
+    event.preventDefault();
+    setRenameStatus(null);
+    setBusy("rename");
+    const res = await fetch("/api/workspace", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: workspaceName.trim() }),
+    }).catch(() => null);
+    const payload = await res?.json().catch(() => null);
+    if (res?.ok && payload?.success) {
+      setWorkspaceName(payload.data.workspace.name);
+      setData((current) =>
+        current
+          ? { ...current, workspace: { ...current.workspace, name: payload.data.workspace.name } }
+          : current
+      );
+      setRenameStatus("saved");
+      // The sidebar shows the name too; it comes from the server layout.
+      router.refresh();
+    } else {
+      setRenameStatus("error");
+    }
+    setBusy(null);
+  }
 
   async function refreshMembers() {
     const res = await fetch("/api/workspace/members");
@@ -140,6 +175,62 @@ export default function SettingsPage() {
       <Suspense fallback={null}>
         <InstagramConnectNotice />
       </Suspense>
+
+      <section className="panel rounded p-4 sm:p-6 space-y-3">
+        <h2 className="text-base font-semibold">{t("Workspace")}</h2>
+        <p className="text-sm text-muted">
+          {t("Each workspace has its own Instagram accounts, campaigns, team and API keys.")}
+        </p>
+        {canManageMembers ? (
+          <form
+            onSubmit={renameWorkspace}
+            className="grid gap-3 sm:grid-cols-[1fr_auto]"
+          >
+            <label className="sr-only" htmlFor="workspace-name">
+              {t("Workspace name")}
+            </label>
+            <input
+              id="workspace-name"
+              value={workspaceName}
+              onChange={(event) => {
+                setWorkspaceName(event.target.value);
+                setRenameStatus(null);
+              }}
+              maxLength={60}
+              required
+              className="rounded border border-border bg-surface px-4 py-2 text-sm text-foreground outline-none transition-colors focus:border-accent/40"
+            />
+            <button
+              type="submit"
+              disabled={
+                busy === "rename" ||
+                !workspaceName.trim() ||
+                workspaceName.trim() === data?.workspace.name
+              }
+              className="rounded bg-accent px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-accent-hover disabled:opacity-50"
+            >
+              {busy === "rename" ? t("Saving…") : t("Save changes")}
+            </button>
+            {renameStatus && (
+              <p
+                role={renameStatus === "error" ? "alert" : "status"}
+                className={`sm:col-span-2 text-sm ${renameStatus === "error" ? "text-error" : "text-success"}`}
+              >
+                {renameStatus === "error"
+                  ? t("Could not rename the workspace. Please try again.")
+                  : t("Workspace renamed.")}
+              </p>
+            )}
+          </form>
+        ) : (
+          <>
+            <p className="text-sm font-medium text-foreground">{data?.workspace.name}</p>
+            <p className="text-xs text-muted">
+              {t("Only owners and admins can rename the workspace.")}
+            </p>
+          </>
+        )}
+      </section>
 
       <section className="panel rounded p-4 sm:p-6 space-y-3">
         <h2 className="text-base font-semibold">{t("Interface language")}</h2>
