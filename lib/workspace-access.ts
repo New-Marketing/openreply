@@ -1,7 +1,7 @@
 import type { Workspace, WorkspaceRole } from "@/app/generated/prisma/client";
 import { getCurrentUserId } from "@/lib/auth";
 import { prisma } from "@/lib/db/client";
-import { ensureWorkspaceForUser } from "@/lib/workspace";
+import { ensureWorkspaceForUser, getWorkspaceMembership } from "@/lib/workspace";
 
 export type WorkspaceContext = {
   userId: string;
@@ -31,20 +31,21 @@ export function canManageBilling(role: WorkspaceRole) {
   return role === "OWNER";
 }
 
+/**
+ * The signed-in user's active workspace (see ACTIVE_WORKSPACE_COOKIE), with
+ * their role in it. Every session-authenticated page and route scopes through
+ * this, so switching workspaces needs no changes in the callers.
+ */
 export async function getCurrentWorkspaceContext(): Promise<WorkspaceContext | null> {
   const userId = await getCurrentUserId();
   if (!userId) return null;
 
-  const membership = await prisma.workspaceMember.findFirst({
-    where: { userId },
-    include: { workspace: true },
-    orderBy: { createdAt: "asc" },
-  });
+  const membership = await getWorkspaceMembership(userId);
 
   if (membership) {
     return {
       userId,
-      workspaceId: membership.workspaceId,
+      workspaceId: membership.workspace.id,
       workspace: membership.workspace,
       role: membership.role,
     };

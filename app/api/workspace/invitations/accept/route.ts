@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db/client";
+import { setActiveWorkspaceCookie } from "@/lib/workspace";
 import { normalizeInvitationEmail } from "@/lib/workspace-invitations";
 
 export async function POST(request: NextRequest) {
@@ -70,6 +71,9 @@ export async function POST(request: NextRequest) {
       data: { status: "ACCEPTED", acceptedAt: new Date() },
     }),
   ]);
+
+  // Land the user in the workspace they just joined.
+  await setActiveWorkspaceCookie(invitation.workspaceId);
 
   return NextResponse.json({
     success: true,
