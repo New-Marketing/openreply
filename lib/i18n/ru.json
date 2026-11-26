@@ -476,5 +476,17 @@
   "Workspace-scoped keys for the API and MCP server. Keys are read-only unless you allow more. Only admins and owners can manage keys.": "Ключи для API и сервера MCP в пределах рабочего пространства. По умолчанию ключи доступны только для чтения. Управлять ключами могут только администраторы и владельцы.",
   "Permissions": "Разрешения",
   "Editing a live campaign also needs campaigns:activate. Without it, a key has to pause the campaign first.": "Для изменения активной кампании также требуется campaigns:activate. Без этого права ключ должен сначала приостановить кампанию.",
-  "Last used: {date}": "Последнее использование: {date}"
+  "Last used: {date}": "Последнее использование: {date}",
+  "Switch workspace": "Сменить рабочее пространство",
+  "Your workspaces": "Ваши рабочие пространства",
+  "New workspace": "Новое рабочее пространство",
+  "Workspace name": "Название рабочего пространства",
+  "Create workspace": "Создать рабочее пространство",
+  "Creating…": "Создаём…",
+  "Could not switch workspace. Please try again.": "Не удалось сменить рабочее пространство. Попробуйте ещё раз.",
+  "Could not create the workspace. Please try again.": "Не удалось создать рабочее пространство. Попробуйте ещё раз.",
+  "Each workspace has its own Instagram accounts, campaigns, team and API keys.": "У каждого рабочего пространства свои аккаунты Instagram, кампании, команда и ключи API.",
+  "Workspace renamed.": "Рабочее пространство переименовано.",
+  "Could not rename the workspace. Please try again.": "Не удалось переименовать рабочее пространство. Попробуйте ещё раз.",
+  "Only owners and admins can rename the workspace.": "Переименовать рабочее пространство могут только владельцы и администраторы."
 }

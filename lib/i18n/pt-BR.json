@@ -387,7 +387,7 @@
   "When someone comments on": "Quando alguém comentar em",
   "Work email": "E-mail de trabalho",
   "Worker health": "Saúde do worker",
-  "Workspace": "Espaço de trabalho",
+  "Workspace": "Perfil",
   "Workspace invitation": "Convite para o espaço de trabalho",
   "Write a message": "Escreva uma mensagem",
   "Write a reply…  (Enter to send, Shift+Enter for a new line)": "Escreva uma resposta…  (Enter para enviar, Shift+Enter para nova linha)",
@@ -476,5 +476,17 @@
   "Workspace-scoped keys for the API and MCP server. Keys are read-only unless you allow more. Only admins and owners can manage keys.": "Chaves do espaço de trabalho para a API e o servidor MCP. As chaves são somente leitura, a menos que você permita mais. Apenas administradores e proprietários podem gerenciar chaves.",
   "Permissions": "Permissões",
   "Editing a live campaign also needs campaigns:activate. Without it, a key has to pause the campaign first.": "Editar uma campanha ativa também exige campaigns:activate. Sem isso, a chave precisa pausar a campanha antes.",
-  "Last used: {date}": "Último uso: {date}"
+  "Last used: {date}": "Último uso: {date}",
+  "Switch workspace": "Trocar de perfil",
+  "Your workspaces": "Seus perfis",
+  "New workspace": "Novo perfil",
+  "Workspace name": "Nome do perfil",
+  "Create workspace": "Criar perfil",
+  "Creating…": "Criando…",
+  "Could not switch workspace. Please try again.": "Não foi possível trocar de perfil. Tente novamente.",
+  "Could not create the workspace. Please try again.": "Não foi possível criar o perfil. Tente novamente.",
+  "Each workspace has its own Instagram accounts, campaigns, team and API keys.": "Cada perfil tem suas próprias contas do Instagram, campanhas, equipe e chaves de API.",
+  "Workspace renamed.": "Perfil renomeado.",
+  "Could not rename the workspace. Please try again.": "Não foi possível renomear o perfil. Tente novamente.",
+  "Only owners and admins can rename the workspace.": "Somente proprietários e administradores podem renomear o perfil."
 }

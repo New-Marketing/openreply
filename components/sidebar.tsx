@@ -7,7 +7,9 @@
  */
 
 import LanguageSwitcher from "@/components/language-switcher";
+import WorkspaceSwitcher from "@/components/workspace-switcher";
 import { useI18n } from "@/lib/i18n/provider";
+import type { WorkspaceSummary } from "@/lib/workspace";
 import Link from "next/link";
 import Image from "next/image";
 import { zernioLink } from "@/lib/zernio-links";
@@ -27,13 +29,17 @@ const navItems = [
 interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
+  workspaceId: string;
   workspaceName: string;
+  workspaces: WorkspaceSummary[];
 }
 
 export default function Sidebar({
   isOpen,
   onClose,
+  workspaceId,
   workspaceName,
+  workspaces,
 }: SidebarProps) {
   const { t } = useI18n();
   const pathname = usePathname();
@@ -67,6 +73,15 @@ export default function Sidebar({
           </Link>
         </div>
 
+        <div className="px-3 pt-4">
+          <WorkspaceSwitcher
+            workspaceId={workspaceId}
+            workspaceName={workspaceName}
+            workspaces={workspaces}
+            onSwitched={onClose}
+          />
+        </div>
+
         <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
           {navItems.map((item) => {
             const isActive =
@@ -94,7 +109,6 @@ export default function Sidebar({
 
         <div className="px-5 py-4 border-t border-border">
           <div className="mb-4"><LanguageSwitcher /></div>
-          <p className="text-sm text-foreground truncate">{workspaceName}</p>
           <p className="text-xs text-muted">{t("Self-hosted")}</p>
           <a
             href={zernioLink({ placement: "sidebar" })}

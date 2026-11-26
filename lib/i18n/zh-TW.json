@@ -476,5 +476,17 @@
   "Workspace-scoped keys for the API and MCP server. Keys are read-only unless you allow more. Only admins and owners can manage keys.": "用於 API 與 MCP 伺服器、僅限所屬工作區的金鑰。除非您另行允許，金鑰皆為唯讀。只有管理員與擁有者能管理金鑰。",
   "Permissions": "權限",
   "Editing a live campaign also needs campaigns:activate. Without it, a key has to pause the campaign first.": "編輯進行中的行銷活動也需要 campaigns:activate。沒有此權限時，金鑰須先暫停該活動。",
-  "Last used: {date}": "上次使用：{date}"
+  "Last used: {date}": "上次使用：{date}",
+  "Switch workspace": "切換工作區",
+  "Your workspaces": "你的工作區",
+  "New workspace": "新增工作區",
+  "Workspace name": "工作區名稱",
+  "Create workspace": "建立工作區",
+  "Creating…": "建立中…",
+  "Could not switch workspace. Please try again.": "無法切換工作區，請再試一次。",
+  "Could not create the workspace. Please try again.": "無法建立工作區，請再試一次。",
+  "Each workspace has its own Instagram accounts, campaigns, team and API keys.": "每個工作區都有各自的 Instagram 帳號、自動回覆活動、團隊與 API 金鑰。",
+  "Workspace renamed.": "已重新命名工作區。",
+  "Could not rename the workspace. Please try again.": "無法重新命名工作區，請再試一次。",
+  "Only owners and admins can rename the workspace.": "只有擁有者和管理員可以重新命名工作區。"
 }
